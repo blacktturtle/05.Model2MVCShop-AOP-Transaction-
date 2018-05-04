@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="WishListMapper">
+
+	<resultMap id="wishListSelectMap" type="wishList">
+		
+		<result property="wishIsPurchaseCode" column="IS_PRUCHASE_CODE" jdbcType="NUMERIC" />
+		<result property="wishNo" column="prod_detail" jdbcType="NUMERIC" />
+		<association property="wishListProd" javaType="com.model2.mvc.service.domain.Product">
+			<result property="prodNo" column="prod_No" jdbcType="NUMERIC"/>
+			<result property="prodName" column="prod_Name" jdbcType="VARCHAR"/>
+			<result property="price" column="price" jdbcType="NUMERIC"/>
+			</association>
+		<association property="wishListBuyer" javaType="com.model2.mvc.service.domain.User">
+			<result property="userId" column="buyer_id" jdbcType="VARCHAR"/>
+		</association>
+	</resultMap>
+
+	<!-- SQL : INSERT -->
+	<insert id="addWishList" parameterType="wishList">
+		INSERT
+		INTO wishlist
+		VALUES ( 
+		seq_wishlist_wish_no.nextval ,
+		#{wishListBuyer.userId},
+		#{wishListProd.prodNo},
+		#{wishListProd.prodName},
+		#{wishListProd.price}		
+		 )
+	</insert>
+	
+	<select id="getWishList" parameterType="int" resultMap="wishListSelectMap">
+		SELECT *
+		FROM wishlist
+		WHERE prod_no = #{value}	
+	</select>
+	
+	
+	
+	
+	<select id="getAllWishList" parameterType="java.util.Map" resultMap="wishListSelectMap">
+	SELECT *
+		FROM(SELECT inner_table.* , ROWNUM AS row_seq 
+					FROM( SELECT wi.*, NVL(tr.IS_PURCHASe_CODE,0) IS_PURCHASE_CODE
+									FROM WISHLIST wi, TRANSACTION tr
+									WHERE wi.PROD_NO = tr.PROD_NO(+) AND wi.BUYER_ID = #{userId}) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+					WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum} 
+	</select>
+	
+	<select id="getTotalCount" parameterType="string" resultType="int">
+		SELECT COUNT(*)
+	  	FROM(SELECT  wi.*, NVL(tr.IS_PURCHASe_CODE,0) IS_PURCHASE_CODE
+					FROM WISHLIST wi, TRANSACTION tr
+					WHERE wi.PROD_NO = tr.PROD_NO(+) AND wi.BUYER_ID = #{value} 	) countTable
+	</select>
+	
+	
+	
+
+</mapper>

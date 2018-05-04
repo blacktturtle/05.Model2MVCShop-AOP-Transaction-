@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+		PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PurchaseMapper">
+
+
+
+	<resultMap id="purchaseSelectMap" type="purchase">
+		<result property="divyAddr" column="demailaddr" jdbcType="VARCHAR" />
+		<result property="divyDate" column="dlvy_date" jdbcType="DATE" />
+		<result property="divyRequest" column="dlvy_request" jdbcType="VARCHAR" />
+		<result property="orderDate" column="order_data" jdbcType="DATE" />
+		<result property="paymentOption" column="payment_option" jdbcType="VARCHAR" />
+		<result property="receiverName" column="receiver_name" jdbcType="VARCHAR" />
+		<result property="receiverPhone" column="receiver_phone" jdbcType="VARCHAR" />
+		<result property="tranCode" column="tran_status_code" jdbcType="VARCHAR" />
+		<result property="tranNo" column="tran_no" jdbcType="NUMERIC" />
+		 <result property="isPurchaseCode" column="is_purchase_code" jdbcType="NUMERIC" />  
+		<result property="quantity" column="quantity" jdbcType="NUMERIC" />
+		<association property="buyer" javaType="com.model2.mvc.service.domain.User"/> 
+	<!-- 		<result property="userId" column="buyer_id" jdbcType="VARCHAR"/>
+		</association>   -->
+		<association property="purchaseProd" javaType="com.model2.mvc.service.domain.Product">
+			  <result property="prodNo" column="prod_no" jdbcType="NUMERIC"/> 
+			  <result property="prodName" column="prod_name" jdbcType="VARCHAR"/> 
+			  <result property="price" column="price" jdbcType="NUMERIC"/> 
+		 </association> 			 		
+	</resultMap>
+
+	<!-- SQL : INSERT -->
+	<insert id="addPurchase" parameterType="purchase">
+		INSERT
+		INTO transaction( buyer_id , demailaddr , dlvy_date , dlvy_request, order_data, 
+		payment_option, prod_no , receiver_name , receiver_phone, tran_status_code,tran_no, is_purchase_code,  quantity)
+		VALUES ( 
+		 #{buyer.userId} ,
+		#{divyAddr:VARCHAR} ,
+		#{divyDate:DATE} , 
+		#{divyRequest:VARCHAR} , 
+		SYSDATE,
+		#{paymentOption:VARCHAR} ,
+		#{purchaseProd.prodNo} , 
+		#{receiverName:VARCHAR} ,
+		#{receiverPhone:VARCHAR} ,
+		#{tranCode:VARCHAR} ,
+		seq_transaction_tran_no.nextval, 
+		 #{isPurchaseCode:NUMERIC} , 
+		 #{quantity:NUMERIC} )
+	</insert>
+	
+	<select id="getPurchase" parameterType="int" resultMap="purchaseSelectMap">
+		SELECT *
+		FROM transaction
+		WHERE tran_no=#{value}
+	</select>
+	
+	
+	<update id="updatePurchase" parameterType="purchase">
+		UPDATE transaction 
+		<set>
+		demailaddr = #{divyAddr},
+		dlvy_date = #{divyDate},
+		dlvy_request = #{divyRequest},
+		payment_option = #{paymentOption},
+		</set>
+		WHERE tran_No =  #{tranNo}
+	</update>
+	
+	
+	
+	
+	<select id="getPurchaseList" parameterType="java.util.Map" resultMap="purchaseSelectMap">
+		SELECT *
+		FROM(SELECT inner_table.* , ROWNUM AS row_seq 
+					FROM( SELECT pr.prod_no, pr.prod_name, pr.price,tr.quantity,tr.tran_no, tr.receiver_name, 
+													tr.receiver_phone, tr.tran_status_code, tr.is_purchase_code
+									FROM transaction tr, product pr
+									WHERE tr.prod_no = pr.prod_no AND tr.buyer_id= #{buyerId}
+									ORDER BY tran_no ) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+					WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<select id="getDeliveryList" parameterType="java.util.Map" resultMap="purchaseSelectMap">
+		SELECT *
+		FROM(SELECT inner_table.* , ROWNUM AS row_seq 
+					FROM( SELECT *
+									FROM transaction
+									WHERE prod_no = #{prodNo}
+									 ) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+					WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum}
+	</select>
+	
+	<select id="getTotalCount" parameterType="string" resultType="int" >
+	SELECT COUNT(*)
+	  	FROM(	SELECT pr.prod_no, pr.prod_name, pr.price,tr.quantity,tr.tran_no, tr.receiver_name, 
+						tr.receiver_phone, tr.tran_status_code, tr.is_purchase_code
+						FROM transaction tr, product pr
+						WHERE tr.prod_no = pr.prod_no AND tr.buyer_id= #{value}) countTable					
+	</select>
+	
+	<select id="getTotalCount2" parameterType="string" resultType="int" >
+	SELECT COUNT(*)
+	  	FROM(	SELECT *
+						FROM transaction
+						WHERE prod_no = #{prodNo}) countTable					
+	</select>
+	
+	
+
+</mapper>
